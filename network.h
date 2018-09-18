@@ -1,47 +1,65 @@
 #pragma once
-
-#include "queue.h"
 #include "supervisor.h"
-#include "elevator.h"
-#include "Network_files/sverresnetwork.h"
-#include <string>
-#include <iostream>
-#include <sstream>
-
-
-typedef struct{
-	int elevator_ID;
-	bool online;
-} Elevator_online;
+#include "queue.h"
+#include <mutex>
 
 class Network{
 private:
-	int n_elevators;
+	std::vector<Elevator*> elevators;
 
-	Elevator elevators[N_ELEVATORS]; //Tror elevators må være vector. N_ELEVATORS from const_struct_def.h
+	std::string master_ip;
 
-	Elevator_online elevators_online[N_ELEVATORS];
+	int master_ID;
 
-	void nw_messagestring_to_elevator_object(string &message);
+	Elevator messagestring_to_elevator_object(std::string &messagestring);
+
+	std::string elevator_object_to_messagestring(Elevator &elevator);
+
 public:
 	Network();
-	
-	Network(int n_elevators);
 
-	Elevator* nw_get_elevators(){return elevators;}
+	~Network();
 
-	void nw_message_recieve();
+	Network(Status elevator_status, std::vector<std::vector<Queue_element> > *order_matrix_ptr, int elevator_ID);
 
-	void nw_inform_supervisor(Elevator &elevator);
+//----------------------------------------------------------------------------------------------------------------------
+//		Network get functions
+//----------------------------------------------------------------------------------------------------------------------
 
-	void nw_slave_request_order_matrix();
+	std::vector<Elevator*> get_elevators(){return elevators;}
 
-	void nw_distribute_order_matrix(Queue_element &order_matrix_ptr);
+	Elevator* get_elevator_ptr(int elevator_ID){return elevators[elevator_ID];}
 
-	void nw_slave_order_complete(Elevator &elevator);
+	std::string get_master_ip(){return master_ip;}
 
-	void nw_slave_order_incomplete(Elevator &elevator);
+//----------------------------------------------------------------------------------------------------------------------
+//		Network set functions
+//----------------------------------------------------------------------------------------------------------------------
 
-	bool nw_ping_elevator(Elevator &elevator);
+	void set_master_ip(std::string master_ip){this->master_ip = master_ip;}
 
+	void handle_message(Message message_ID, int this_elevator_ID, int foreign_elevator_ID);
+
+	void recieve_message_packet(int this_elevator_ID);
+
+	void recieve_handshake_message(int this_elevator_ID);
+
+	void send_message_packet(Message message_ID, int this_elevator_ID, std::string reciever_ip);
+
+	bool is_node_responding(int this_elevator_ID, int foreign_elevator_ID);
+
+	void check_responding_elevators(int this_elevator_ID);
+
+	void check_my_role(int this_elevator_ID);
 };
+
+
+//----------------------------------------------------------------------------------------------------------------------
+//		Network thread functions
+//----------------------------------------------------------------------------------------------------------------------
+
+void network_send(Elevator* my_elevator, Network &my_network);
+
+void network_recieve(Elevator* my_elevator, Network &my_network);
+
+void network_ping(Elevator* my_elevator, Network &my_network);

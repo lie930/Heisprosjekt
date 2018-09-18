@@ -1,12 +1,6 @@
 #pragma once
+#include "queue.h"
 
+void sv_manage_order_matrix(std::vector<Elevator*> elevators, int elevator_ID);
 
-#include <string>
-#include <iostream>
-
-//treng ikkje vere ein klasse
-class Supervisor{
-
-
-
-};
+void sv_manage_completed_order(Elevator* elevator);
